@@ -76,7 +76,7 @@ def send_email(subject, msg):
 			s.login(ses_id, ses_password)
 			s.sendmail(mail_from, mail_to, msg)
 			s.quit()
-		print('INFO: Report sent to {0}'.format(mail_to))
+		print('Report sent to {0}'.format(mail_to))
 	except:
 		print('ERROR: Message sending failed.')
 		sys.exit(1)
