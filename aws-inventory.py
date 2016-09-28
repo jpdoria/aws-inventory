@@ -7,20 +7,11 @@ Date: 2016-09-20
 Prerequisites:
 > Python 3.5+
 > Boto3 (pip3 install boto3)
-> SES SMTP Account
 > Your AWS Access Key ID and Secret Access Key configured in awscli or IAM Role
-TODO:
-> Add trap and cleanup
-> Add features:
-	> RDS
-	> S3
-	> VPC
-	> CloudFront
-> Add new sheet to a CSV file
 '''
 
 # Modules
-import boto3, csv, os, smtplib, sys
+import boto3, csv, os, sys
 from datetime import datetime
 from email import encoders
 from email.mime.base import MIMEBase
@@ -45,12 +36,6 @@ mail_to = 'jdoria@stratpoint.com'
 count = 0
 aws_regions = []
 
-# SES - Add your SES credentials here
-#ses_server = 'email-smtp.us-east-1.amazonaws.com'
-#ses_port = 587
-#ses_id = 'AccessKeyID'
-#ses_password = 'SecretAccessKey'
-
 # Check Python version
 if sys.version_info < (3, 5, 0):
 	print('You must use Python version 3.5 or later to use this script.')
@@ -69,14 +54,16 @@ def count_instances():
 # Send email
 def send_email(subject, msg):
 	try:
-		with smtplib.SMTP(ses_server, ses_port) as s:
-			s.ehlo()
-			s.starttls()
-			s.ehlo()
-			s.login(ses_id, ses_password)
-			s.sendmail(mail_from, mail_to, msg)
-			s.quit()
-		print('Report sent to {0}'.format(mail_to))
+		client = boto3.client('ses')
+		response = client.send_raw_email(
+			Source=mail_from,
+			Destinations=[
+				mail_to
+			],
+			RawMessage={
+				'Data': msg
+			}
+		)
 	except:
 		print('ERROR: Message sending failed.')
 		sys.exit(1)
@@ -193,9 +180,6 @@ def describe_ec2():
 			export_csv(details)
 
 	count_instances()
-
-def describe_rds():
-	print('Hello World!')
 
 # List of functions
 def main():

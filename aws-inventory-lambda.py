@@ -10,7 +10,7 @@ Prerequisites:
 > Your AWS Access Key ID and Secret Access Key configured in awscli or IAM Role
 ==============================
 How to use this on AWS Lambda?
-- Simply copy lines 17-197 and paste it to AWS Lambda
+- Simply copy lines 17-199 and paste it to AWS Lambda
 ==============================
 '''
 
@@ -57,16 +57,20 @@ def count_instances():
 
 # Send email
 def send_email(subject, msg):
-	client = boto3.client('ses')
-	response = client.send_raw_email(
-		Source=mail_from,
-		Destinations=[
-			mail_to
-		],
-		RawMessage={
-			'Data': msg
-		}
-	)
+	try:
+		client = boto3.client('ses')
+		response = client.send_raw_email(
+			Source=mail_from,
+			Destinations=[
+				mail_to
+			],
+			RawMessage={
+				'Data': msg
+			}
+		)
+	except:
+		print('ERROR: Message sending failed.')
+		sys.exit(1)
 
 # Prepare email
 def mail_csv():
@@ -180,9 +184,6 @@ def describe_ec2():
 			export_csv(details)
 
 	count_instances()
-
-def describe_rds():
-	print('Hello World!')
 
 # List of functions
 def main(event, context):
