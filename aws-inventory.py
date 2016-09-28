@@ -194,6 +194,9 @@ def describe_ec2():
 
 	count_instances()
 
+def describe_rds():
+	print('Hello World!')
+
 # List of functions
 def main():
 	describe_regions()
