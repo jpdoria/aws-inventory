@@ -14,7 +14,7 @@ Simply copy lines 17-199 of aws-inventory-lambda.py and paste it on AWS Lambda
 
 Make sure to `import smtplib` first then find these lines...
 
-```
+```python
 # Send email
 def send_email(subject, msg):
 	try:
@@ -35,7 +35,7 @@ def send_email(subject, msg):
 
 And replace them with...
 
-```
+```python
 # Send email
 def send_email(subject, msg):
 	smtp_server = 'smtpserver'
