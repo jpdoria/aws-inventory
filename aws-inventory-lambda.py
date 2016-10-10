@@ -90,7 +90,6 @@ def mail_csv():
 		encoders.encode_base64(attachment)
 		attachment.add_header(*header)
 		msg.attach(attachment)
-
 	except:
 		print('ERROR: Unable to open file: \'{0}\''.format(report_file))
 		sys.exit(1)
