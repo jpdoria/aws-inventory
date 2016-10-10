@@ -111,7 +111,7 @@ def describe_ec2():
 	# Make count variable as global
 	global count
 
-	instance_state = ['running', 'stopped']
+	instance_state = ('running', 'stopped')
 	headers = (
 			'Region',
 			'InstanceId',

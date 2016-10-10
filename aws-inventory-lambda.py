@@ -116,8 +116,8 @@ def describe_ec2():
 	# Make count variable as global
 	global count
 
-	instance_state = ['running', 'stopped']
-	headers = [
+	instance_state = ('running', 'stopped')
+	headers = (
 			'Region',
 			'InstanceId',
 			'InstanceType',
@@ -126,7 +126,7 @@ def describe_ec2():
 			'InstanceState',
 			'Name',
 			'CostCenter'
-	]
+	)
 
 	export_csv(headers)
 
