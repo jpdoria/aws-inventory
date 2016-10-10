@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 '''
 Script: aws-inventory.py
 Author: JP <jp@lazyadm.in>
@@ -11,13 +10,16 @@ Prerequisites:
 '''
 
 # Modules
-import boto3, csv, os, sys
+import boto3
+import csv
+import os
+import sys
 from datetime import datetime
 from email import encoders
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 
-# Generic
+# About
 script_name = os.path.basename(__file__)
 script_title = 'AWS Inventory'
 version = 'v1.0'
@@ -43,9 +45,6 @@ if sys.version_info < (3, 5, 0):
 
 # Print script name and version
 print(script_title, version)
-
-# Print start time
-print('Start Time:', now)
 
 # Print total number of instance_state instances
 def count_instances():
@@ -86,7 +85,6 @@ def mail_csv():
 		encoders.encode_base64(attachment)
 		attachment.add_header(*header)
 		msg.attach(attachment)
-
 	except:
 		print('ERROR: Unable to open file: \'{0}\''.format(report_file))
 		sys.exit(1)
@@ -114,7 +112,7 @@ def describe_ec2():
 	global count
 
 	instance_state = ['running', 'stopped']
-	headers = [
+	headers = (
 			'Region',
 			'InstanceId',
 			'InstanceType',
@@ -123,7 +121,7 @@ def describe_ec2():
 			'InstanceState',
 			'Name',
 			'CostCenter'
-	]
+	)
 
 	export_csv(headers)
 
@@ -190,6 +188,3 @@ def main():
 # Code will run only when executed as primary script (or call it from another script), no importing!
 if __name__ == '__main__':
 	main()
-
-# Print end time
-print('End Time:', now)
