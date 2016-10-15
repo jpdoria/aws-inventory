@@ -4,11 +4,9 @@ This script will check all active instances in EC2 in your AWS account
 # Prerequisites #
 * Python 3.5+
 * Boto3 (pip3 install boto3)
+* XLWT (pip3 install xlwt)
 * SES SMTP Account
 * Your AWS Access Key ID and Secret Access Key configured in awscli or IAM Role
-
-# How to use this on AWS Lambda?
-Simply copy lines 17-199 of aws-inventory-lambda.py and paste it on AWS Lambda
 
 # How to send email using smtplib?
 
@@ -58,7 +56,5 @@ def send_email(subject, msg):
 ```
 
 # TODO
-* RDS
-* S3
 * VPC
 * CloudFront
