@@ -1,4 +1,9 @@
 # About #
+
+[![forthebadge](http://forthebadge.com/images/badges/built-with-love.svg)](http://forthebadge.com)
+[![forthebadge](http://forthebadge.com/images/badges/powered-by-oxygen.svg)](http://forthebadge.com)
+[![forthebadge](http://forthebadge.com/images/badges/fuck-it-ship-it.svg)](http://forthebadge.com)
+
 This script will check all active instances in EC2 in your AWS account
 
 # Prerequisites #
@@ -55,6 +60,10 @@ def send_email(subject, msg):
 		sys.exit(1)
 ```
 
-# TODO
-* VPC
-* CloudFront
+# Checklist
+- [x] EC2
+- [x] RDS
+- [x] S3
+- [] VPC
+- [] CloudFront
+- [] Route 53
