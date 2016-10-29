@@ -18,29 +18,36 @@ This script will check all active instances in EC2 in your AWS account
 Make sure to `import smtplib` first then find these lines...
 
 ```python
-# Send email
 def send_email(subject, msg):
-	try:
-		client = boto3.client('ses')
-		response = client.send_raw_email(
-			Source=mail_from,
-			Destinations=[
-				mail_to
-			],
-			RawMessage={
-				'Data': msg
-			}
-		)
-	except:
-		print('ERROR: Message sending failed.')
-		sys.exit(1)
+    '''
+    Email report to recipient
+    '''
+    try:
+        client = boto3.client('ses')
+
+        client.send_raw_email(
+            Source=mail_from,
+            Destinations=[
+                mail_to
+            ],
+            RawMessage={
+                'Data': msg
+            }
+        )
+        logger.info('Report sent to {}'.format(mail_to))
+    except (SystemExit, KeyboardInterrupt):
+        raise
+    except Exception as e:
+        logger.error(e, exc_info=True)
 ```
 
 And replace them with...
 
 ```python
-# Send email
 def send_email(subject, msg):
+    '''
+    Email report to recipient
+    '''
 	smtp_server = 'smtpserver'
 	smtp_port = <port>
 	smtp_id = 'username'
@@ -54,10 +61,11 @@ def send_email(subject, msg):
 			s.login(smtp_id, smtp_password)
 			s.sendmail(mail_from, mail_to, msg)
 			s.quit()
-		print('Report sent to {0}'.format(mail_to))
-	except:
-		print('ERROR: Message sending failed.')
-		sys.exit(1)
+		logger.info('Report sent to {}'.format(mail_to))
+	except (SystemExit, KeyboardInterrupt):
+        raise
+    except Exception as e:
+        logger.error(e, exc_info=True)
 ```
 
 # Checklist
