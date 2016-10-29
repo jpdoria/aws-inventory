@@ -9,11 +9,11 @@ Prerequisites:
 > Your AWS Access Key ID and Secret Access Key configured in awscli or IAM Role
 '''
 
-
 # Modules
 import boto3
 import csv
 import glob
+import logging
 import os
 import sys
 import xlwt
@@ -23,13 +23,28 @@ from email import encoders
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 
+# Logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s | %(levelname)s - %(funcName)s - %(message)s',
+    datefmt='%Y-%b-%d %I:%M:%S %p'
+)
+logger = logging.getLogger(__name__)
+
 # About
 script_title = 'AWS Inventory'
 version = 'v1.0'
 
 # Reports
 now = datetime.now()
-report_date = '{:02d}{:02d}{:04d}-{:02d}{:02d}{:02d}'.format(now.month, now.day, now.year, now.hour, now.minute, now.second)
+report_date = '{:02d}{:02d}{:04d}-{:02d}{:02d}{:02d}'.format(
+    now.month,
+    now.day,
+    now.year,
+    now.hour,
+    now.minute,
+    now.second
+)
 
 # Email
 sender_name = 'AWS@Stratpoint'
@@ -38,17 +53,22 @@ mail_to = 'jdoria@stratpoint.com'
 
 # Check Python version
 if sys.version_info < (3, 5, 0):
-    print('You must use Python version 3.5 or later to use this script.')
+    logger.warning(
+        'You must use Python version 3.5 or later to use this script.'
+    )
     sys.exit(1)
 
 # Print script name and version
-print(script_title, version)
+logger.info('{0} {1}'.format(script_title, version))
 
 
-# Send email
 def send_email(subject, msg):
+    '''
+    Email report to recipient
+    '''
     try:
         client = boto3.client('ses')
+
         client.send_raw_email(
             Source=mail_from,
             Destinations=[
@@ -58,15 +78,23 @@ def send_email(subject, msg):
                 'Data': msg
             }
         )
-    except:
+        logger.info('Report sent to {}'.format(mail_to))
+    except (SystemExit, KeyboardInterrupt):
         raise
+    except Exception as e:
+        logger.error(e, exc_info=True)
 
 
-# Prepare email
 def mail_csv(report_file):
+    '''
+    Compose an email
+    '''
     try:
         subject = '{0} {1} {2}'.format(script_title, version, report_date)
-        header = 'Content-Disposition', 'attachment; filename={0}'.format(os.path.basename(report_file))
+        header = 'Content-Disposition', 'attachment; filename={0}'.format(
+            os.path.basename
+            (report_file)
+        )
         msg = MIMEMultipart()
         msg['From'] = '{0} <{1}>'.format(sender_name, mail_from)
         msg['To'] = mail_to
@@ -81,12 +109,16 @@ def mail_csv(report_file):
         attachment.add_header(*header)
         msg.attach(attachment)
         send_email(subject, msg.as_string())
-    except:
+    except (SystemExit, KeyboardInterrupt):
         raise
+    except Exception as e:
+        logger.error(e, exc_info=True)
 
 
-# Compile CSV files
 def compile_csv_files():
+    '''
+    Compile CSV file
+    '''
     try:
         wb = xlwt.Workbook()
 
@@ -107,12 +139,16 @@ def compile_csv_files():
         final_report = '/tmp/AWSInventory-{}.xls'.format(report_date)
 
         return final_report
-    except:
+    except (SystemExit, KeyboardInterrupt):
         raise
+    except Exception as e:
+        logger.error(e, exc_info=True)
 
 
-# Export to a CSV file
 def export_csv(service, *args):
+    '''
+    Export to a CSV file
+    '''
     try:
         report_file = '/tmp/{}.csv'.format(service)
 
@@ -120,17 +156,23 @@ def export_csv(service, *args):
             with open(report_file, 'a') as csv_file:
                 csv_writer = csv.writer(csv_file, delimiter=',')
                 csv_writer.writerow(arg)
-    except:
+    except (SystemExit, KeyboardInterrupt):
         raise
+    except Exception as e:
+        logger.error(e, exc_info=True)
 
 
-# Print total number of resources
 def count_resources(service, count):
-    print('\nTotal number of {0} resources: {1}'.format(service, count))
+    '''
+    Print total number of resources
+    '''
+    logger.info('Total number of {0} resources: {1}'.format(service, count))
 
 
-# Describe S3
 def describe_s3():
+    '''
+    Describe S3
+    '''
     try:
         service = 'S3'
         count = 0
@@ -155,17 +197,20 @@ def describe_s3():
             )
 
             # Get BucketName
-            print('\n{}:\t'.format(headers[0]), bucket_name)
+            logger.info('{0}: {1}'.format(headers[0], bucket_name))
             details.append(bucket_name)
 
             # Get Location
             us_standard_region = 'us-east-1'
 
             if bucket_location['LocationConstraint'] is None:
-                print('{}:\t'.format(headers[1]), us_standard_region)
+                logger.info('{0}: {1}'.format(headers[1], us_standard_region))
                 details.append(us_standard_region)
             else:
-                print('{}:\t'.format(headers[1]), bucket_location['LocationConstraint'])
+                logger.info('{0}: {1}'.format(
+                        headers[1],
+                        bucket_location['LocationConstraint'])
+                )
                 details.append(bucket_location['LocationConstraint'])
 
             # Get BucketSize
@@ -179,19 +224,23 @@ def describe_s3():
                 for key in objects['Contents']:
                     object_sizes.append(key['Size'])
 
-            print('BucketSize:\t {0} B'.format(sum(object_sizes)))
+            logger.info('BucketSize: {} B'.format(sum(object_sizes)))
             details.append(sum(object_sizes))
 
             count += 1
             export_csv(service, details)
 
         count_resources(service, count)
-    except:
+    except (SystemExit, KeyboardInterrupt):
         raise
+    except Exception as e:
+        logger.error(e, exc_info=True)
 
 
-# Describe RDS
 def describe_rds(aws_regions):
+    '''
+    Describe RDS
+    '''
     try:
         service = 'RDS'
         count = 0
@@ -216,25 +265,43 @@ def describe_rds(aws_regions):
                 details = []
                 costcenter_tag = None
 
-                print('\n{}:\t\t\t'.format(headers[0]), region)
+                logger.info('{0}: {1}'.format(headers[0], region))
                 details.append(region)
 
-                print('{}:\t'.format(headers[1]), instance[headers[1]])
+                logger.info('{0}: {1}'.format(
+                    headers[1],
+                    instance[headers[1]])
+                )
                 details.append(instance[headers[1]])
 
-                print('{}:\t'.format(headers[2]), instance[headers[2]])
+                logger.info('{0}: {1}'.format(
+                    headers[2],
+                    instance[headers[2]])
+                )
                 details.append(instance[headers[2]])
 
-                print('{}:\t\t\t'.format(headers[3]), instance[headers[3]])
+                logger.info('{0}: {1}'.format(
+                    headers[3],
+                    instance[headers[3]])
+                )
                 details.append(instance[headers[3]])
 
-                print('{}:\t'.format(headers[4]), instance[headers[4]])
+                logger.info('{0}: {1}'.format(
+                    headers[4],
+                    instance[headers[4]])
+                )
                 details.append(instance[headers[4]])
 
-                print('{}:\t\t'.format(headers[5]), instance[headers[5]]['Address'])
+                logger.info('{0}: {1}'.format(
+                        headers[5],
+                        instance[headers[5]]['Address'])
+                )
                 details.append(instance[headers[5]]['Address'])
 
-                print('{}:\t\t'.format(headers[6]), instance[headers[6]])
+                logger.info('{0}: {1}'.format(
+                    headers[6],
+                    instance[headers[6]])
+                )
                 details.append(instance[headers[6]])
 
                 rds_arn = instance['DBInstanceArn']
@@ -246,19 +313,23 @@ def describe_rds(aws_regions):
                     if tag['Key'] == headers[7] or tag['Key'] == 'Cost Center':
                         costcenter_tag = tag['Value']
 
-                print('{}\t\t'.format(headers[7]), costcenter_tag)
+                logger.info('{0}: {1}'.format(headers[7], costcenter_tag))
                 details.append(costcenter_tag)
 
                 count += 1
                 export_csv(service, details)
 
         count_resources(service, count)
-    except:
+    except (SystemExit, KeyboardInterrupt):
         raise
+    except Exception as e:
+        logger.error(e, exc_info=True)
 
 
-# Describe EC2
 def describe_ec2(aws_regions):
+    '''
+    Describe EC2
+    '''
     try:
         service = 'EC2'
         count = 0
@@ -294,46 +365,66 @@ def describe_ec2(aws_regions):
                 costcenter_tag = None
 
                 # Append elements to details list
-                print('\n{}:\t\t'.format(headers[0]), instance.placement['AvailabilityZone'])
+                logger.info('{0}: {1}'.format(
+                    headers[0],
+                    instance.placement['AvailabilityZone'])
+                )
                 details.append(instance.placement['AvailabilityZone'])
 
-                print('{}:\t'.format(headers[1]), instance.id)
+                logger.info('{0}: {1}'.format(headers[1], instance.id))
                 details.append(instance.id)
 
-                print('{}:\t'.format(headers[2]), instance.instance_type)
+                logger.info('{0}: {1}'.format(
+                    headers[2],
+                    instance.instance_type)
+                )
                 details.append(instance.instance_type)
 
-                print('{}:\t'.format(headers[3]), instance.private_ip_address)
+                logger.info('{0}: {1}'.format(
+                        headers[3],
+                        instance.private_ip_address)
+                )
                 details.append(instance.private_ip_address)
 
-                print('{}:\t'.format(headers[4]), instance.public_ip_address)
+                logger.info('{0}: {1}'.format(
+                        headers[4],
+                        instance.public_ip_address)
+                )
                 details.append(instance.public_ip_address)
 
-                print('{}:\t'.format(headers[5]), instance.state['Name'])
+                logger.info('{0}: {1}'.format(
+                    headers[5],
+                    instance.state['Name'])
+                )
                 details.append(instance.state['Name'])
 
                 for tag in instance.tags:
                     if tag['Key'] == 'Name':
                         name_tag = tag['Value']
-                    elif tag['Key'] == headers[7] or tag['Key'] == 'Cost Center':
+                    elif tag['Key'] == headers[7] \
+                            or tag['Key'] == 'Cost Center':
                         costcenter_tag = tag['Value']
 
-                print('{}:\t\t'.format(headers[6]), name_tag)
+                logger.info('{0}: {1}'.format(headers[6], name_tag))
                 details.append(name_tag)
 
-                print('{}:\t'.format(headers[7]), costcenter_tag)
+                logger.info('{0}: {1}'.format(headers[7], costcenter_tag))
                 details.append(costcenter_tag)
 
                 count += 1
                 export_csv(service, details)
 
         count_resources(service, count)
-    except:
+    except (SystemExit, KeyboardInterrupt):
         raise
+    except Exception as e:
+        logger.error(e, exc_info=True)
 
 
-# List the available regions in AWS then add them to aws_regions list
 def describe_regions():
+    '''
+    List the available regions in AWS then add them to aws_regions list
+    '''
     try:
         client = boto3.client('ec2')
         regions = client.describe_regions()['Regions']
@@ -343,18 +434,22 @@ def describe_regions():
             region_list.append((region['RegionName']))
 
         return(region_list)
-    except:
+    except (SystemExit, KeyboardInterrupt):
         raise
+    except Exception as e:
+        logger.error(e, exc_info=True)
 
 
-# List of functions
 def main():
+    '''
+    Main function that will invoke other functions
+    '''
     aws_regions = describe_regions()
     describe_ec2(aws_regions)
     describe_rds(aws_regions)
     describe_s3()
     mail_csv(compile_csv_files())
 
-# Execute
+
 if __name__ == '__main__':
     main()
