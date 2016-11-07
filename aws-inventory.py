@@ -169,7 +169,61 @@ def count_resources(service, count):
     logger.info('Total number of {0} resources: {1}'.format(service, count))
 
 
+def describe_r53():
+    '''
+    Desribe Route 53
+    '''
+    try:
+        service = 'Route 53'
+        count = 0
+        r53 = boto3.client('route53')
+        response = r53.list_hosted_zones()
+        headers = (
+            'HostedZone',
+            'ZoneId',
+            'ResourceRecordSetCount',
+            'PrivateZone'
+        )
+
+        export_csv(service, headers)
+
+        logger.info('Getting hosted zones in {}...'.format(service))
+
+        for hosted_zone in response['HostedZones']:
+            details = []
+            zone_name = hosted_zone['Name']
+            zone_id = hosted_zone['Id'].replace('/hostedzone/', '')
+            record_set_count = hosted_zone['ResourceRecordSetCount']
+            private_zone = hosted_zone['Config']['PrivateZone']
+
+            logger.info('Fetching {} info...'.format(zone_name))
+
+            logger.info('{0}: {1}'.format(headers[0], zone_name))
+            details.append(zone_name)
+
+            logger.info('{0}: {1}'.format(headers[1], zone_id))
+            details.append(zone_id)
+
+            logger.info('{0}: {1}'.format(headers[2], record_set_count))
+            details.append(record_set_count)
+
+            logger.info('{0}: {1}'.format(headers[3], private_zone))
+            details.append(private_zone)
+
+            count += 1
+            export_csv(service, details)
+
+        count_resources(service, count)
+    except (SystemExit, KeyboardInterrupt):
+        raise
+    except Exception as e:
+        logger.error(e, exc_info=True)
+
+
 def describe_cf():
+    '''
+    Describe CloudFront
+    '''
     try:
         service = 'CloudFront'
         count = 0
@@ -199,37 +253,36 @@ def describe_cf():
             enabled = distribution['Enabled']
             price_class = distribution['PriceClass']
 
-            logger.info('Fetching {} info...'.format(distribution_id))
-
-            logger.info('DistributionId: {}'.format(distribution_id))
+            logger.info('{0}: {1}'.format(headers[0], distribution_id))
             details.append(distribution_id)
 
-            logger.info('Origin: {}'.format(origin))
+            logger.info('{0}: {1}'.format(headers[1], origin))
             details.append(origin)
 
-            logger.info('Domain: {}'.format(domain))
+            logger.info('{0}: {1}'.format(headers[2], domain))
             details.append(domain)
 
             if cnames_qty != 0:
                 cnames = distribution['Aliases']['Items'][0]
-                logger.info('CNAMEs: {}'.format(cnames))
+                logger.info('{0}: {1}'.format(headers[3], cnames))
                 details.append(cnames)
             else:
                 logger.info(
-                    'CNAMEs: no CNAMEs defined for {}'.format(distribution_id)
+                    '{0}: no CNAMEs defined for {1}'.format(
+                        headers[3],
+                        distribution_id
+                    )
                 )
                 details.append('None')
 
-            logger.info('Status: {}'.format(status))
+            logger.info('{0}: {1}'.format(headers[4], status))
             details.append(status)
 
-            logger.info('Enabled: {}'.format(enabled))
+            logger.info('{0}: {1}'.format(headers[5], enabled))
             details.append(enabled)
 
-            logger.info('PriceClass: {}'.format(price_class))
+            logger.info('{0}: {1}'.format(headers[6], price_class))
             details.append(price_class)
-
-            logger.info('{} info received!'.format(distribution_id))
 
             count += 1
             export_csv(service, details)
@@ -521,6 +574,7 @@ def main():
     describe_rds(aws_regions)
     describe_s3()
     describe_cf()
+    describe_r53()
     mail_csv(compile_csv_files())
 
 
