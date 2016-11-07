@@ -73,5 +73,5 @@ def send_email(subject, msg):
 - [x] RDS
 - [x] S3
 - [ ] VPC
-- [ ] CloudFront
+- [x] CloudFront
 - [ ] Route 53
