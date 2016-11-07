@@ -169,6 +169,78 @@ def count_resources(service, count):
     logger.info('Total number of {0} resources: {1}'.format(service, count))
 
 
+def describe_cf():
+    try:
+        service = 'CloudFront'
+        count = 0
+        cf = boto3.client('cloudfront')
+        response = cf.list_distributions()
+        headers = (
+            'Id',
+            'Origin',
+            'Domain',
+            'CNAMEs',
+            'Status',
+            'Enabled',
+            'PriceClass'
+        )
+
+        export_csv(service, headers)
+
+        distribution_list = response['DistributionList']['Items']
+
+        for distribution in distribution_list:
+            details = []
+            distribution_id = distribution['Id']
+            origin = distribution['Origins']['Items'][0]['DomainName']
+            domain = distribution['DomainName']
+            cnames_qty = distribution['Aliases']['Quantity']
+            status = distribution['Status']
+            enabled = distribution['Enabled']
+            price_class = distribution['PriceClass']
+
+            logger.info('Fetching {} info...'.format(distribution_id))
+
+            logger.info('DistributionId: {}'.format(distribution_id))
+            details.append(distribution_id)
+
+            logger.info('Origin: {}'.format(origin))
+            details.append(origin)
+
+            logger.info('Domain: {}'.format(domain))
+            details.append(domain)
+
+            if cnames_qty != 0:
+                cnames = distribution['Aliases']['Items'][0]
+                logger.info('CNAMEs: {}'.format(cnames))
+                details.append(cnames)
+            else:
+                logger.info(
+                    'CNAMEs: no CNAMEs defined for {}'.format(distribution_id)
+                )
+                details.append('None')
+
+            logger.info('Status: {}'.format(status))
+            details.append(status)
+
+            logger.info('Enabled: {}'.format(enabled))
+            details.append(enabled)
+
+            logger.info('PriceClass: {}'.format(price_class))
+            details.append(price_class)
+
+            logger.info('{} info received!'.format(distribution_id))
+
+            count += 1
+            export_csv(service, details)
+
+        count_resources(service, count)
+    except (SystemExit, KeyboardInterrupt):
+        raise
+    except Exception as e:
+        logger.error(e, exc_info=True)
+
+
 def describe_s3():
     '''
     Describe S3
@@ -448,6 +520,7 @@ def main():
     describe_ec2(aws_regions)
     describe_rds(aws_regions)
     describe_s3()
+    describe_cf()
     mail_csv(compile_csv_files())
 
 
