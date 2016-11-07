@@ -70,8 +70,9 @@ def send_email(subject, msg):
 
 # Checklist
 - [x] EC2
+- [ ] Elastic IP
 - [x] RDS
 - [x] S3
 - [ ] VPC
 - [x] CloudFront
-- [ ] Route 53
+- [x] Route 53
