@@ -1,15 +1,7 @@
 #!/usr/bin/env python3
-'''
-Script: aws-inventory.py
-Author: JP <jp@lazyadm.in>
-Date: 2016-09-20
-Prerequisites:
-> Python 3.5+
-> Boto3 (pip3 install boto3)
-> Your AWS Access Key ID and Secret Access Key configured in awscli or IAM Role
-'''
 
 # Modules
+import asyncio
 import boto3
 import csv
 import glob
@@ -62,10 +54,10 @@ if sys.version_info < (3, 5, 0):
 logger.info('{0} {1}'.format(script_title, version))
 
 
-def send_email(subject, msg):
-    '''
+def send_email(msg):
+    """
     Email report to recipient
-    '''
+    """
     try:
         client = boto3.client('ses')
 
@@ -83,17 +75,17 @@ def send_email(subject, msg):
         raise
     except Exception as e:
         logger.error(e, exc_info=True)
+        sys.exit(1)
 
 
-def mail_csv(report_file):
-    '''
+async def mail_csv(report_file):
+    """
     Compose an email
-    '''
+    """
     try:
         subject = '{0} {1} {2}'.format(script_title, version, report_date)
-        header = 'Content-Disposition', 'attachment; filename={0}'.format(
-            os.path.basename
-            (report_file)
+        header = 'Content-Disposition', 'attachment; filename={}'.format(
+            os.path.basename(report_file)
         )
         msg = MIMEMultipart()
         msg['From'] = '{0} <{1}>'.format(sender_name, mail_from)
@@ -108,17 +100,18 @@ def mail_csv(report_file):
         encoders.encode_base64(attachment)
         attachment.add_header(*header)
         msg.attach(attachment)
-        send_email(subject, msg.as_string())
+        send_email(msg.as_string())
     except (SystemExit, KeyboardInterrupt):
         raise
     except Exception as e:
         logger.error(e, exc_info=True)
+        sys.exit(1)
 
 
 def compile_csv_files():
-    '''
+    """
     Compile CSV file
-    '''
+    """
     try:
         wb = xlwt.Workbook()
 
@@ -143,12 +136,13 @@ def compile_csv_files():
         raise
     except Exception as e:
         logger.error(e, exc_info=True)
+        sys.exit(1)
 
 
-def export_csv(service, *args):
-    '''
+async def export_csv(service, *args):
+    """
     Export to a CSV file
-    '''
+    """
     try:
         report_file = '/tmp/{}.csv'.format(service)
 
@@ -160,19 +154,20 @@ def export_csv(service, *args):
         raise
     except Exception as e:
         logger.error(e, exc_info=True)
+        sys.exit(1)
 
 
-def count_resources(service, count):
-    '''
+async def count_resources(service, count):
+    """
     Print total number of resources
-    '''
+    """
     logger.info('Total number of {0} resources: {1}'.format(service, count))
 
 
-def describe_r53():
-    '''
-    Desribe Route 53
-    '''
+async def describe_r53():
+    """
+    Describe Route 53
+    """
     try:
         service = 'Route 53'
         count = 0
@@ -185,7 +180,7 @@ def describe_r53():
             'PrivateZone'
         )
 
-        export_csv(service, headers)
+        await export_csv(service, headers)
 
         logger.info('Getting hosted zones in {}...'.format(service))
 
@@ -211,19 +206,21 @@ def describe_r53():
             details.append(private_zone)
 
             count += 1
-            export_csv(service, details)
+            await export_csv(service, details)
+            await asyncio.sleep(0)
 
-        count_resources(service, count)
+        await count_resources(service, count)
     except (SystemExit, KeyboardInterrupt):
         raise
     except Exception as e:
         logger.error(e, exc_info=True)
+        sys.exit(1)
 
 
-def describe_cf():
-    '''
+async def describe_cf():
+    """
     Describe CloudFront
-    '''
+    """
     try:
         service = 'CloudFront'
         count = 0
@@ -239,7 +236,7 @@ def describe_cf():
             'PriceClass'
         )
 
-        export_csv(service, headers)
+        await export_csv(service, headers)
 
         distribution_list = response['DistributionList']['Items']
 
@@ -285,19 +282,21 @@ def describe_cf():
             details.append(price_class)
 
             count += 1
-            export_csv(service, details)
+            await export_csv(service, details)
+            await asyncio.sleep(0)
 
-        count_resources(service, count)
+        await count_resources(service, count)
     except (SystemExit, KeyboardInterrupt):
         raise
     except Exception as e:
         logger.error(e, exc_info=True)
+        sys.exit(1)
 
 
-def describe_s3():
-    '''
+async def describe_s3():
+    """
     Describe S3
-    '''
+    """
     try:
         service = 'S3'
         count = 0
@@ -312,7 +311,7 @@ def describe_s3():
             'BucketSize (Bytes)'
         )
 
-        export_csv(service, headers)
+        await export_csv(service, headers)
 
         for bucket in buckets['Buckets']:
             details = []
@@ -353,19 +352,21 @@ def describe_s3():
             details.append(sum(object_sizes))
 
             count += 1
-            export_csv(service, details)
+            await export_csv(service, details)
+            await asyncio.sleep(0)
 
-        count_resources(service, count)
+        await count_resources(service, count)
     except (SystemExit, KeyboardInterrupt):
         raise
     except Exception as e:
         logger.error(e, exc_info=True)
+        sys.exit(1)
 
 
-def describe_rds(aws_regions):
-    '''
+async def describe_rds(aws_regions):
+    """
     Describe RDS
-    '''
+    """
     try:
         service = 'RDS'
         count = 0
@@ -380,7 +381,7 @@ def describe_rds(aws_regions):
             'CostCenter'
         )
 
-        export_csv(service, headers)
+        await export_csv(service, headers)
 
         for region in aws_regions:
             rds = boto3.client('rds', region_name=region)
@@ -442,19 +443,21 @@ def describe_rds(aws_regions):
                 details.append(costcenter_tag)
 
                 count += 1
-                export_csv(service, details)
+                await export_csv(service, details)
+                await asyncio.sleep(0)
 
-        count_resources(service, count)
+        await count_resources(service, count)
     except (SystemExit, KeyboardInterrupt):
         raise
     except Exception as e:
         logger.error(e, exc_info=True)
+        sys.exit(1)
 
 
-def describe_ec2(aws_regions):
-    '''
+async def describe_ec2(aws_regions):
+    """
     Describe EC2
-    '''
+    """
     try:
         service = 'EC2'
         count = 0
@@ -470,7 +473,7 @@ def describe_ec2(aws_regions):
                 'CostCenter'
         )
 
-        export_csv(service, headers)
+        await export_csv(service, headers)
 
         # Get the updated list of AWS regions
         for region in aws_regions:
@@ -537,19 +540,21 @@ def describe_ec2(aws_regions):
                 details.append(costcenter_tag)
 
                 count += 1
-                export_csv(service, details)
+                await export_csv(service, details)
+                await asyncio.sleep(0)
 
-        count_resources(service, count)
+        await count_resources(service, count)
     except (SystemExit, KeyboardInterrupt):
         raise
     except Exception as e:
         logger.error(e, exc_info=True)
+        sys.exit(1)
 
 
-def describe_regions():
-    '''
+async def describe_regions():
+    """
     List the available regions in AWS then add them to aws_regions list
-    '''
+    """
     try:
         client = boto3.client('ec2')
         regions = client.describe_regions()['Regions']
@@ -558,25 +563,30 @@ def describe_regions():
         for region in regions:
             region_list.append((region['RegionName']))
 
-        return(region_list)
+        return region_list
     except (SystemExit, KeyboardInterrupt):
         raise
     except Exception as e:
         logger.error(e, exc_info=True)
+        sys.exit(1)
 
 
-def main():
-    '''
+async def main():
+    """
     Main function that will invoke other functions
-    '''
-    aws_regions = describe_regions()
-    describe_ec2(aws_regions)
-    describe_rds(aws_regions)
-    describe_s3()
-    describe_cf()
-    describe_r53()
-    mail_csv(compile_csv_files())
+    """
+    aws_regions = await describe_regions()
+    task1 = asyncio.ensure_future(describe_ec2(aws_regions))
+    task2 = asyncio.ensure_future(describe_rds(aws_regions))
+    task3 = asyncio.ensure_future(describe_s3())
+    task4 = asyncio.ensure_future(describe_cf())
+    task5 = asyncio.ensure_future(describe_r53())
+
+    await asyncio.gather(task1, task2, task3, task4, task5)
+    await mail_csv(compile_csv_files())
 
 
 if __name__ == '__main__':
-    main()
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())
+    loop.close()
