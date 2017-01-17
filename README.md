@@ -1,19 +1,75 @@
 # About #
 
 [![forthebadge](http://forthebadge.com/images/badges/built-with-love.svg)](http://forthebadge.com)
-[![forthebadge](http://forthebadge.com/images/badges/powered-by-oxygen.svg)](http://forthebadge.com)
-[![forthebadge](http://forthebadge.com/images/badges/fuck-it-ship-it.svg)](http://forthebadge.com)
+[![forthebadge](http://forthebadge.com/images/badges/powered-by-electricity.svg)](http://forthebadge.com)
+[![forthebadge](http://forthebadge.com/images/badges/kinda-sfw.svg)](http://forthebadge.com)
 
 This script will check all active instances in EC2 in your AWS account
 
-# Prerequisites #
-* Python 3.5+
-* Boto3 (pip3 install boto3)
-* XLWT (pip3 install xlwt)
+# Prerequisites
+* Virtualenv
+* Python 3.6+
+* Modules in requirements.txt
 * SES SMTP Account
 * Your AWS Access Key ID and Secret Access Key configured in awscli or IAM Role
 
-# How to send email using smtplib?
+# How to use this script
+
+Install `virtualenv` first
+
+```
+pip3 install virtualenv
+```
+
+Clone this repository
+
+```
+git clone https://github.com/jpdoria/aws-inventory.git
+```
+
+Change directory to aws-inventory
+
+```
+cd aws-inventory
+```
+
+Create a virtual environment
+
+```
+virtualenv -p python3.6 env
+```
+
+Activate virtual environment
+
+```
+source env/bin/activate
+```
+
+or
+
+```
+. env/bin/activate
+```
+
+Install required modules
+
+```
+pip install -r requirements.txt
+```
+
+Make sure the script is executable
+
+```
+chmod +x aws-inventory.py
+```
+
+Run the script
+
+```
+./aws-inventory.py
+```
+
+# How to send email using `smtplib`
 
 Make sure to `import smtplib` first then find these lines...
 
